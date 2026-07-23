@@ -1,0 +1,20 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Flask Backend",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "src.aiclipboardoptimizer.web.server"],
+      "port": 5000,
+      "description": "Flask development server for the API"
+    },
+    {
+      "name": "React Frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5173,
+      "description": "Vite React development server",
+      "cwd": "web"
+    }
+  ]
+}
