@@ -4,6 +4,8 @@
 # Core desktop features.
 pyperclip>=1.9.0
 Pillow>=10.0
+requests>=2.31.0  # Auto-update system
+packaging>=23.0  # Version parsing
 
 # Web server (Flask backend).
 Flask>=3.0.0
