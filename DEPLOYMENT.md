@@ -1,6 +1,6 @@
-# Token Optimizer - Deployment Guide
+# Less Token - Deployment & Release Guide
 
-Production deployment for Token Optimizer web app.
+Complete deployment guide for Less Token desktop application and landing page.
 
 ## Deployment Architecture
 
@@ -46,7 +46,55 @@ Frontend will be live at: `https://your-project.vercel.app`
 
 ---
 
-## Backend Deployment (Docker + Cloud)
+## Desktop App Release (Windows)
+
+### 1. Build Executable with PyInstaller
+```bash
+pip install pyinstaller
+python -m PyInstaller --onefile --windowed --name "Less Token" main.py
+# Output: dist/Less Token.exe (23.6 MB)
+```
+
+### 2. Create Windows Installer with NSIS
+Prerequisites:
+```bash
+# Install NSIS from: https://nsis.sourceforge.io/
+# Or via chocolatey: choco install nsis
+```
+
+Build installer:
+```bash
+# Navigate to project root
+cd C:\Projects\AIClipboardOptimizer
+
+# Run NSIS compiler
+makensis installer.nsi
+# Output: lesstoken-setup.exe (5-10 MB)
+```
+
+### 3. Create GitHub Release
+```bash
+# Tag release
+git tag v1.0.0
+git push origin v1.0.0
+
+# Create release with downloads
+gh release create v1.0.0 dist/"Less Token.exe" \
+  --title "Less Token v1.0.0" \
+  --notes "Release notes here"
+
+# Add installer to release
+gh release upload v1.0.0 lesstoken-setup.exe
+```
+
+### 4. Distribution
+Users can download:
+- **Portable**: Less Token.exe (standalone, no installation)
+- **Installer**: lesstoken-setup.exe (adds Start Menu shortcuts, Registry entries)
+
+---
+
+## Landing Page Deployment (Vercel)
 
 ### 1. Create Dockerfile
 
