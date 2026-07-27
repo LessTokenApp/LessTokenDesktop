@@ -5,7 +5,7 @@
 !include "x64.nsh"
 
 ; Basic Settings
-Name "Less Token v1.0.2"
+Name "Less Token v1.0.3"
 OutFile "lesstoken-setup.exe"
 InstallDir "$PROGRAMFILES\Less Token"
 
