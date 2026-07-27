@@ -71,7 +71,15 @@ class ImageOptimizer:
         )
 
     def copy_image_to_clipboard(self, image_path: str | Path) -> bool:
-        """Copy an image to the Windows clipboard when pywin32 is available."""
+        """Copy an image to the Windows clipboard when pywin32 is available.
+
+        Writes both the classic CF_DIB (for older Win32 apps such as Paint or
+        Word) and the custom "PNG" format that Chromium and Electron apps -
+        which is what almost every web-based AI chat actually is - look for
+        when reading a pasted image. Writing only CF_DIB left those targets
+        pasting nothing at all, since Windows does not synthesize a "PNG"
+        clipboard entry from a DIB on its own.
+        """
         try:
             import win32clipboard
             import win32con
@@ -79,16 +87,25 @@ class ImageOptimizer:
             return False
 
         self._require_pillow()
-        image = Image.open(image_path).convert("RGB")
-        output = BytesIO()
-        image.save(output, "BMP")
-        data = output.getvalue()[14:]
-        output.close()
+        image = Image.open(image_path)
+
+        bmp_buffer = BytesIO()
+        image.convert("RGB").save(bmp_buffer, "BMP")
+        dib_data = bmp_buffer.getvalue()[14:]  # strip the BITMAPFILEHEADER
+        bmp_buffer.close()
+
+        png_buffer = BytesIO()
+        image.save(png_buffer, "PNG")
+        png_data = png_buffer.getvalue()
+        png_buffer.close()
+
+        png_format = win32clipboard.RegisterClipboardFormat("PNG")
 
         win32clipboard.OpenClipboard()
         try:
             win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardData(win32con.CF_DIB, data)
+            win32clipboard.SetClipboardData(win32con.CF_DIB, dib_data)
+            win32clipboard.SetClipboardData(png_format, png_data)
         finally:
             win32clipboard.CloseClipboard()
         return True
