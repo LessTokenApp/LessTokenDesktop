@@ -48,15 +48,32 @@ class FileService(BaseService):
     def service_name(self) -> str:
         return "file"
 
+    @staticmethod
+    def _pdf_reader_class():
+        """Return a PdfReader class, or None when no PDF library is installed.
+
+        pypdf is the maintained successor to PyPDF2 and is what
+        requirements.txt installs; PyPDF2 is accepted for older environments.
+        Both expose the same PdfReader API.
+        """
+        try:
+            from pypdf import PdfReader
+            return PdfReader
+        except ImportError:
+            pass
+        try:
+            from PyPDF2 import PdfReader
+            return PdfReader
+        except ImportError:
+            return None
+
     def _check_pdf_support(self) -> bool:
         """Check if PDF support available."""
-        try:
-            import PyPDF2
+        if self._pdf_reader_class() is not None:
             logger.info("PDF support available")
             return True
-        except ImportError:
-            logger.warning("PDF support not available - install PyPDF2")
-            return False
+        logger.warning("PDF support not available - install pypdf")
+        return False
 
     def _check_docx_support(self) -> bool:
         """Check if Word support available."""
@@ -118,10 +135,10 @@ class FileService(BaseService):
             raise RuntimeError("PDF support not available")
 
         try:
-            import PyPDF2
+            pdf_reader_class = self._pdf_reader_class()
 
             with open(file_path, "rb") as f:
-                reader = PyPDF2.PdfReader(f)
+                reader = pdf_reader_class(f)
                 total_pages = len(reader.pages)
 
                 # Determine which pages to extract
