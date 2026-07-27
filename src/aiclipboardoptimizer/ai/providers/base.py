@@ -75,6 +75,30 @@ class BaseProvider(ABC):
         """
         raise NotImplementedError("Subclass must implement cost estimation")
 
+    # --- optional vision support -------------------------------------------
+    # Deliberately not abstract: providers without vision keep working
+    # unchanged, and callers ask before they call.
+
+    @property
+    def supports_vision(self) -> bool:
+        """Whether this provider can read images."""
+        return False
+
+    @property
+    def default_vision_model(self) -> str | None:
+        """Model to use for image reading when the caller has no preference."""
+        return None
+
+    def read_image(
+        self, image_bytes: bytes, media_type: str, prompt: str, model: str | None = None
+    ) -> ProviderResponse:
+        """Return the text contained in an image.
+
+        Raises:
+            NotImplementedError: If the provider cannot read images.
+        """
+        raise NotImplementedError(f"{self.provider_name} cannot read images.")
+
     @property
     @abstractmethod
     def provider_name(self) -> str:

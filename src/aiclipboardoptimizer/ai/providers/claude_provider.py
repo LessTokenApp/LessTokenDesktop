@@ -1,4 +1,6 @@
 """Claude (Anthropic) provider implementation."""
+import base64
+
 from anthropic import Anthropic
 
 from .base import BaseProvider, ProviderResponse
@@ -43,6 +45,61 @@ class ClaudeProvider(BaseProvider):
             )
         except Exception as e:
             raise RuntimeError(f"Claude API error: {e}") from e
+
+    @property
+    def supports_vision(self) -> bool:
+        """Claude reads images."""
+        return True
+
+    @property
+    def default_vision_model(self) -> str:
+        """Model used for image reading."""
+        return "claude-opus-5"
+
+    def read_image(
+        self, image_bytes: bytes, media_type: str, prompt: str, model: str | None = None
+    ) -> ProviderResponse:
+        """Return the text Claude reads in an image."""
+        model = model or self.default_vision_model
+        try:
+            response = self.client.messages.create(
+                model=model,
+                max_tokens=2048,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": media_type,
+                                    "data": base64.b64encode(image_bytes).decode(),
+                                },
+                            },
+                            {"type": "text", "text": prompt},
+                        ],
+                    }
+                ],
+            )
+
+            # A thinking block can precede the answer, so pick the text block
+            # rather than assuming it comes first.
+            blocks = [b for b in response.content if getattr(b, "type", None) == "text"]
+            if not blocks:
+                raise RuntimeError("Claude returned no text block")
+
+            input_tokens = response.usage.input_tokens
+            output_tokens = response.usage.output_tokens
+            return ProviderResponse(
+                text=blocks[0].text,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                model=model,
+                cost_usd=self.estimate_cost(input_tokens, output_tokens, model),
+            )
+        except Exception as e:
+            raise RuntimeError(f"Claude image read failed: {e}") from e
 
     def count_tokens(self, text: str, model: str) -> int:
         """Count tokens using Claude's count_tokens API."""

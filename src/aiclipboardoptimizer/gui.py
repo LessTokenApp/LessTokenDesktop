@@ -9,7 +9,7 @@ from .ai.processor import AIProcessor, get_operation_labels
 from .clipboard.monitor import ClipboardMonitor
 from .config import AppConfig
 from .files import load_text_from_file, save_text_to_file
-from .image import ClipboardImageWatcher, ImageOptimizer
+from .image import ClipboardImageWatcher, ImageOptimizer, ImageTextReader
 
 
 class ClipboardOptimizerApp:
@@ -333,12 +333,48 @@ class ClipboardOptimizerApp:
         if self.current_image is None:
             messagebox.showinfo("Bilgi", "Once panodan veya dosyadan gorsel alin.")
             return
-        text = self.image_optimizer.extract_text(self.current_image)
-        self._set_image_info(text)
-        if text and not text.startswith("OCR icin"):
-            self.input_text.delete("1.0", tk.END)
-            self.input_text.insert("1.0", text)
-            self.status.set("Gorselden metin okundu ve Metin sekmesine aktarildi.")
+
+        self.status.set("Gorselden metin okunuyor...")
+        self.root.update_idletasks()
+
+        reader = ImageTextReader(self.image_optimizer, self._vision_provider())
+        result = reader.read(self.current_image)
+        self._set_image_info(result.text)
+
+        if result.source in {"none", "error"}:
+            self.status.set(result.text)
+            return
+
+        self.input_text.delete("1.0", tk.END)
+        self.input_text.insert("1.0", result.text)
+
+        note = "yerel OCR" if result.source == "tesseract" else result.source
+        cost = f", ~${result.cost_usd:.4f}" if result.cost_usd else ""
+        self.status.set(
+            f"Gorselden metin okundu ({note}{cost}) ve Metin sekmesine aktarildi."
+        )
+
+    def _vision_provider(self):
+        """Return a provider that can read images, or None."""
+        keys = {
+            "openai": self.config.openai_api_key,
+            "claude": self.config.claude_api_key,
+            "gemini": self.config.gemini_api_key,
+        }
+        name = self.config.ai_provider
+        if name not in keys or not keys[name]:
+            return None
+
+        try:
+            from .ai.providers import ProviderFactory
+
+            provider = ProviderFactory.create(name, keys[name])
+        except Exception:
+            # A missing SDK or bad credentials should not break the button;
+            # read() reports the situation to the user instead.
+            return None
+
+        return provider if getattr(provider, "supports_vision", False) else None
 
     def describe_image(self) -> None:
         if self.current_image is None:

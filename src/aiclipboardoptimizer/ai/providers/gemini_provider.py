@@ -22,6 +22,41 @@ class GeminiProvider(BaseProvider):
         genai.configure(api_key=api_key)
         self.model = None
 
+    @property
+    def supports_vision(self) -> bool:
+        """Gemini reads images."""
+        return True
+
+    @property
+    def default_vision_model(self) -> str:
+        """Floating alias, so a retired pinned version cannot break this."""
+        return "gemini-flash-latest"
+
+    def read_image(
+        self, image_bytes: bytes, media_type: str, prompt: str, model: str | None = None
+    ) -> ProviderResponse:
+        """Return the text Gemini reads in an image."""
+        model = model or self.default_vision_model
+        try:
+            vision_model = genai.GenerativeModel(model)
+            response = vision_model.generate_content(
+                [{"mime_type": media_type, "data": image_bytes}, prompt]
+            )
+
+            usage = getattr(response, "usage_metadata", None)
+            input_tokens = getattr(usage, "prompt_token_count", 0) if usage else 0
+            output_tokens = getattr(usage, "candidates_token_count", 0) if usage else 0
+
+            return ProviderResponse(
+                text=response.text,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                model=model,
+                cost_usd=self.estimate_cost(input_tokens, output_tokens, model),
+            )
+        except Exception as e:
+            raise RuntimeError(f"Gemini image read failed: {e}") from e
+
     def process(self, prompt: str, model: str) -> ProviderResponse:
         """Execute prompt via Gemini API and return response with token counts."""
         if model not in self.supported_models:

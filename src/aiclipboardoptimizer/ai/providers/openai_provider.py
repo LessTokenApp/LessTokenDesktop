@@ -23,6 +23,49 @@ class OpenAIProvider(BaseProvider):
         self.client = OpenAI(api_key=api_key)
         self.encoding = None
 
+    @property
+    def supports_vision(self) -> bool:
+        """GPT-4 class models read images."""
+        return True
+
+    @property
+    def default_vision_model(self) -> str:
+        """Model used for image reading."""
+        return "gpt-4.1"
+
+    def read_image(
+        self, image_bytes: bytes, media_type: str, prompt: str, model: str | None = None
+    ) -> ProviderResponse:
+        """Return the text the model reads in an image."""
+        import base64
+
+        model = model or self.default_vision_model
+        data_url = f"data:{media_type};base64,{base64.b64encode(image_bytes).decode()}"
+        try:
+            response = self.client.chat.completions.create(
+                model=model,
+                max_tokens=2048,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": data_url}},
+                        ],
+                    }
+                ],
+            )
+            usage = response.usage
+            return ProviderResponse(
+                text=response.choices[0].message.content or "",
+                input_tokens=usage.prompt_tokens,
+                output_tokens=usage.completion_tokens,
+                model=model,
+                cost_usd=self.estimate_cost(usage.prompt_tokens, usage.completion_tokens, model),
+            )
+        except Exception as e:
+            raise RuntimeError(f"OpenAI image read failed: {e}") from e
+
     def process(self, prompt: str, model: str) -> ProviderResponse:
         """Execute prompt via OpenAI API and return response with token counts."""
         if model not in self.supported_models:
