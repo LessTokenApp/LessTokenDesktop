@@ -100,7 +100,16 @@ class ImageOptimizer:
         except ImportError:
             return "OCR icin pytesseract ve Tesseract OCR kurulumu gerekir."
 
-        text = pytesseract.image_to_string(image)
+        try:
+            text = pytesseract.image_to_string(image)
+        except pytesseract.TesseractNotFoundError:
+            # pytesseract is only a wrapper: the engine is a separate install,
+            # and its absence surfaces here rather than at import time.
+            return (
+                "OCR icin Tesseract OCR programi gerekir. "
+                "https://github.com/UB-Mannheim/tesseract adresinden kurabilirsiniz."
+            )
+
         return text.strip() or "Gorselde okunabilir metin bulunamadi."
 
     def describe_image(self, image) -> str:
