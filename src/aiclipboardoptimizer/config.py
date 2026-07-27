@@ -11,7 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 class AppConfig:
     """Configuration loaded from environment variables."""
 
-    app_name: str = "AI Clipboard Optimizer"
+    app_name: str = "Less Token"
     poll_interval_seconds: float = 1.0
     ai_provider: str = "local"
     ai_model: str = "gpt-4o-mini"

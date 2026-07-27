@@ -1,4 +1,4 @@
-"""Tkinter desktop interface for AI Clipboard Optimizer."""
+"""Tkinter desktop interface for Less Token."""
 import os
 import subprocess
 from pathlib import Path
@@ -84,7 +84,7 @@ class ClipboardOptimizerApp:
         # Title with stats
         header_frame = ttk.Frame(outer)
         header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        ttk.Label(header_frame, text="AI Clipboard Optimizer", font=("Segoe UI", 14, "bold")).pack(side=tk.LEFT)
+        ttk.Label(header_frame, text="Less Token", font=("Segoe UI", 14, "bold")).pack(side=tk.LEFT)
 
         # Notebook tabs
         notebook = ttk.Notebook(outer)

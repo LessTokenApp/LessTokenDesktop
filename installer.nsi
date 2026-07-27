@@ -5,7 +5,7 @@
 !include "x64.nsh"
 
 ; Basic Settings
-Name "Less Token v1.0.0"
+Name "Less Token v1.0.2"
 OutFile "lesstoken-setup.exe"
 InstallDir "$PROGRAMFILES\Less Token"
 
@@ -38,7 +38,7 @@ Section "Install"
 
   ; Registry entries for Add/Remove Programs
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Less Token" \
-             "DisplayName" "Less Token - AI Clipboard Optimizer"
+             "DisplayName" "Less Token"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Less Token" \
              "UninstallString" "$INSTDIR\uninstall.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Less Token" \
