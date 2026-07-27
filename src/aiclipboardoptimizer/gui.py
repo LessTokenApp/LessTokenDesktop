@@ -9,7 +9,7 @@ from .ai.processor import AIProcessor, get_operation_labels
 from .clipboard.monitor import ClipboardMonitor
 from .config import AppConfig
 from .files import load_text_from_file, save_text_to_file
-from .image import ImageOptimizer
+from .image import ClipboardImageWatcher, ImageOptimizer
 
 
 class ClipboardOptimizerApp:
@@ -49,6 +49,15 @@ class ClipboardOptimizerApp:
         self.image_format_var = tk.StringVar(value="JPEG")
         self.max_width_var = tk.IntVar(value=1600)
         self.quality_var = tk.IntVar(value=80)
+
+        self.auto_shrink_var = tk.BooleanVar(value=False)
+        self.auto_status_label: ttk.Label | None = None
+        self.image_watcher = ClipboardImageWatcher(
+            self.image_optimizer,
+            on_result=self._on_auto_shrink,
+            on_error=self._on_auto_shrink_error,
+        )
+        self._auto_poll_job = None
 
         # Token tracking variables
         self.monthly_budget_var = tk.DoubleVar(value=50.0)
@@ -127,6 +136,17 @@ class ClipboardOptimizerApp:
         ttk.Button(top, text="Gorsel dosyasi ac", command=self.open_image_file).pack(side=tk.LEFT, padx=6)
         ttk.Button(top, text="Gorseli kucult ve kaydet", command=self.resize_current_image).pack(side=tk.LEFT)
         ttk.Button(top, text="Son gorseli panoya kopyala", command=self.copy_last_image).pack(side=tk.LEFT, padx=6)
+        auto = ttk.Frame(tab)
+        auto.grid(row=4, column=0, sticky="ew", pady=(8, 0))
+        ttk.Checkbutton(
+            auto,
+            text="Otomatik kucult (panoyu izle)",
+            variable=self.auto_shrink_var,
+            command=self.toggle_auto_shrink,
+        ).pack(side=tk.LEFT)
+        self.auto_status_label = ttk.Label(auto, text="kapali")
+        self.auto_status_label.pack(side=tk.LEFT, padx=10)
+
         options = ttk.Frame(tab)
         options.grid(row=1, column=0, sticky="ew", pady=10)
         ttk.Label(options, text="Maks. genislik").pack(side=tk.LEFT)
@@ -233,6 +253,57 @@ class ClipboardOptimizerApp:
             return
         self._set_image_info(f"Dosya acildi: {path}\n{self.image_optimizer.describe_image(self.current_image)}")
         self.status.set("Gorsel dosyasi acildi.")
+
+    def toggle_auto_shrink(self) -> None:
+        """Start or stop watching the clipboard for images to shrink."""
+        if self.auto_shrink_var.get():
+            self.image_watcher.enabled = True
+            # Adopt the current clipboard so switching this on does not
+            # rewrite an image the user already had.
+            self.image_watcher.prime()
+            self._schedule_auto_poll()
+            self._set_auto_status("izleniyor")
+            self.status.set("Pano izleniyor: yeni gorseller otomatik kucultulecek.")
+        else:
+            self.image_watcher.enabled = False
+            if self._auto_poll_job is not None:
+                self.root.after_cancel(self._auto_poll_job)
+                self._auto_poll_job = None
+            self._set_auto_status("kapali")
+            self.status.set("Pano izleme durduruldu.")
+
+    def _schedule_auto_poll(self) -> None:
+        interval_ms = max(200, int(self.config.poll_interval_seconds * 1000))
+        self._auto_poll_job = self.root.after(interval_ms, self._auto_poll)
+
+    def _auto_poll(self) -> None:
+        if not self.auto_shrink_var.get():
+            self._auto_poll_job = None
+            return
+        # Pick up any settings the user changed since the last tick.
+        self.image_watcher.max_width = self.max_width_var.get()
+        self.image_watcher.quality = self.quality_var.get()
+        self.image_watcher.fmt = self.image_format_var.get()
+        self.image_watcher.poll()
+        self._schedule_auto_poll()
+
+    def _on_auto_shrink(self, result) -> None:
+        kb = result.new_bytes / 1024
+        w, h = result.new_size
+        ow, oh = result.original_size
+        self._set_auto_status(f"{ow}x{oh} -> {w}x{h}, {kb:.0f} KB")
+        self.status.set(
+            f"Panodaki gorsel kucultuldu: {ow}x{oh} -> {w}x{h} ({kb:.0f} KB). "
+            "Yapistirmaya hazir."
+        )
+
+    def _on_auto_shrink_error(self, exc: Exception) -> None:
+        self._set_auto_status("hata")
+        self.status.set(f"Otomatik kucultme basarisiz: {exc}")
+
+    def _set_auto_status(self, text: str) -> None:
+        if self.auto_status_label is not None:
+            self.auto_status_label.config(text=text)
 
     def resize_current_image(self) -> None:
         if self.current_image is None:
