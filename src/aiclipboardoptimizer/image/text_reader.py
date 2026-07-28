@@ -45,8 +45,8 @@ class ImageTextReader:
         if self.provider is None or not getattr(self.provider, "supports_vision", False):
             return ImageTextResult(
                 text=(
-                    "Gorselden metin okumak icin ya Tesseract OCR kurulu olmali, "
-                    "ya da goruntu okuyabilen bir yapay zeka secili olmali "
+                    "Görselden metin okumak için ya Tesseract OCR kurulu olmalı, "
+                    "ya da görüntü okuyabilen bir yapay zeka seçili olmalı "
                     "(ChatGPT, Claude veya Gemini)."
                 ),
                 source="none",
@@ -77,10 +77,10 @@ class ImageTextReader:
             response = self.provider.read_image(payload, media_type, PROMPT)
         except Exception as exc:
             logger.exception("AI image read failed")
-            return ImageTextResult(text=f"Gorsel okunamadi: {exc}", source="error")
+            return ImageTextResult(text=f"Görsel okunamadı: {exc}", source="error")
 
         return ImageTextResult(
-            text=response.text.strip() or "Gorselde okunabilir metin bulunamadi.",
+            text=response.text.strip() or "Görselde okunabilir metin bulunamadı.",
             source=self.provider.provider_name,
             cost_usd=response.cost_usd,
         )

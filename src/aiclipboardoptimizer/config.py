@@ -4,19 +4,23 @@ from pathlib import Path
 import os
 
 PREFIX = "AI_CLIPBOARD_OPTIMIZER_"
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+# A fixed, user-profile-relative folder rather than one derived from the
+# script/exe location: PyInstaller's onefile build resolves `__file__` inside
+# a temporary extraction directory, so anything computed from it (like the
+# old PROJECT_ROOT-based path) lands somewhere the user can't find.
+DEFAULT_OUTPUT_DIR = Path.home() / "Downloads" / "LessToken"
 
 
 @dataclass(frozen=True)
 class AppConfig:
     """Configuration loaded from environment variables."""
 
-    app_name: str = "Less Token"
+    app_name: str = "LessToken"
     poll_interval_seconds: float = 1.0
     ai_provider: str = "local"
     ai_model: str = "gpt-4o-mini"
     log_level: str = "INFO"
-    output_dir: Path = PROJECT_ROOT / "outputs"
+    output_dir: Path = DEFAULT_OUTPUT_DIR
     # API keys for different providers
     openai_api_key: str | None = None
     claude_api_key: str | None = None
@@ -34,7 +38,7 @@ class AppConfig:
 
     @classmethod
     def from_env(cls) -> "AppConfig":
-        output_dir = Path(os.getenv(f"{PREFIX}OUTPUT_DIR", PROJECT_ROOT / "outputs"))
+        output_dir = Path(os.getenv(f"{PREFIX}OUTPUT_DIR", str(DEFAULT_OUTPUT_DIR)))
 
         # Parse provider models from env if set
         provider_models_dict = {

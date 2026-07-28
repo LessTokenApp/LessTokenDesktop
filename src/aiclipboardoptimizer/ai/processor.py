@@ -22,12 +22,12 @@ class TextOperation:
 
 
 OPERATIONS: tuple[TextOperation, ...] = (
-    TextOperation("clean", "Duzelt / temizle", "Clean up spelling, grammar, and clarity."),
-    TextOperation("shorten", "Daha kisa yap", "Make the text shorter without losing the point."),
+    TextOperation("clean", "Düzelt / temizle", "Clean up spelling, grammar, and clarity."),
+    TextOperation("shorten", "Daha kısa yap", "Make the text shorter without losing the point."),
     TextOperation("formal", "Daha resmi yap", "Rewrite the text in a professional formal tone."),
-    TextOperation("summarize", "Ozetle", "Summarize the text clearly in Turkish."),
+    TextOperation("summarize", "Özetle", "Summarize the text clearly in Turkish."),
     TextOperation("bullets", "Madde madde yap", "Turn the text into concise bullet points in Turkish."),
-    TextOperation("translate_en", "Ingilizceye cevir", "Translate the text into natural English."),
+    TextOperation("translate_en", "İngilizceye çevir", "Translate the text into natural English."),
     TextOperation("email", "E-posta haline getir", "Turn the text into a polished email draft."),
 )
 
@@ -161,9 +161,9 @@ class AIProcessor:
         if operation == "bullets":
             return self._bullets(cleaned)
         if operation == "translate_en":
-            return "[AI gerekli] Ingilizce ceviri icin OpenAI API anahtari ekleyin.\n\n" + cleaned
+            return "[AI gerekli] İngilizce çeviri için OpenAI API anahtarı ekleyin.\n\n" + cleaned
         if operation == "email":
-            return "Merhaba,\n\n" + cleaned + "\n\nSaygilarimla,"
+            return "Merhaba,\n\n" + cleaned + "\n\nSaygılarımla,"
         return cleaned
 
     def _get_operation(self, key: str) -> TextOperation:

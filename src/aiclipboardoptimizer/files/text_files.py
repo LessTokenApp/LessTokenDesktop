@@ -34,7 +34,7 @@ def _load_pdf(path: Path) -> str:
     try:
         from pypdf import PdfReader
     except ImportError as exc:  # pragma: no cover - optional dependency
-        raise ValueError("PDF okumak icin pypdf paketi kurulu olmali.") from exc
+        raise ValueError("PDF okumak için pypdf paketi kurulu olmalı.") from exc
 
     reader = PdfReader(str(path))
     pages = [page.extract_text() or "" for page in reader.pages]
@@ -45,7 +45,7 @@ def _load_docx(path: Path) -> str:
     try:
         from docx import Document
     except ImportError as exc:  # pragma: no cover - optional dependency
-        raise ValueError("Word dosyasi okumak icin python-docx paketi kurulu olmali.") from exc
+        raise ValueError("Word dosyası okumak için python-docx paketi kurulu olmalı.") from exc
 
     document = Document(str(path))
     return "\n".join(paragraph.text for paragraph in document.paragraphs if paragraph.text.strip())

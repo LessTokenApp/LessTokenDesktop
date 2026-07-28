@@ -156,9 +156,9 @@ class TokenTracker:
                 recommendations.append(
                     Recommendation(
                         type="switch_model",
-                        title=f"Consider cheaper model instead of {expensive_model['model']}",
-                        description=f"Your most expensive model costs ${expensive_model['cost']:.2f}/month. "
-                        "Try Claude Haiku (80% cheaper) for simple tasks.",
+                        title=f"{expensive_model['model']} yerine daha ucuz bir model deneyin",
+                        description=f"En pahalı modeliniz ayda ${expensive_model['cost']:.2f} tutuyor. "
+                        "Basit görevler için Claude Haiku (%80 daha ucuz) deneyin.",
                         estimated_savings=expensive_model["cost"] * 0.75,
                         confidence=0.8,
                     )
@@ -169,9 +169,9 @@ class TokenTracker:
             recommendations.append(
                 Recommendation(
                     type="batch_process",
-                    title="Consider batching API calls",
-                    description=f"You're making {summary['total_calls']} API calls. "
-                    "Processing in batches could save 20-30% on overhead.",
+                    title="API çağrılarını gruplamayı deneyin",
+                    description=f"{summary['total_calls']} adet API çağrısı yapıyorsunuz. "
+                    "Toplu işleme, ek yükten %20-30 tasarruf sağlayabilir.",
                     estimated_savings=summary["total_cost"] * 0.25,
                     confidence=0.7,
                 )
@@ -184,9 +184,9 @@ class TokenTracker:
                 recommendations.append(
                     Recommendation(
                         type="prompt_optimization",
-                        title="Optimize prompts to reduce input tokens",
-                        description="Your input tokens are high relative to output. "
-                        "Try shorter, more focused prompts to save 15-30%.",
+                        title="Girdi token'larını azaltmak için prompt'ları optimize edin",
+                        description="Girdi token'larınız çıktıya göre yüksek. "
+                        "%15-30 tasarruf için daha kısa, odaklı prompt'lar deneyin.",
                         estimated_savings=summary["total_cost"] * 0.20,
                         confidence=0.75,
                     )

@@ -115,7 +115,7 @@ class ImageOptimizer:
         try:
             import pytesseract
         except ImportError:
-            return "OCR icin pytesseract ve Tesseract OCR kurulumu gerekir."
+            return "OCR için pytesseract ve Tesseract OCR kurulumu gerekir."
 
         try:
             text = pytesseract.image_to_string(image)
@@ -123,17 +123,17 @@ class ImageOptimizer:
             # pytesseract is only a wrapper: the engine is a separate install,
             # and its absence surfaces here rather than at import time.
             return (
-                "OCR icin Tesseract OCR programi gerekir. "
+                "OCR için Tesseract OCR programı gerekir. "
                 "https://github.com/UB-Mannheim/tesseract adresinden kurabilirsiniz."
             )
 
-        return text.strip() or "Gorselde okunabilir metin bulunamadi."
+        return text.strip() or "Görselde okunabilir metin bulunamadı."
 
     def describe_image(self, image) -> str:
         """Return a local technical description of an image."""
         width, height = image.size
-        return f"Gorsel bilgisi: {width}x{height} piksel, mod: {image.mode}."
+        return f"Görsel bilgisi: {width}x{height} piksel, mod: {image.mode}."
 
     def _require_pillow(self) -> None:
         if Image is None or ImageGrab is None:
-            raise RuntimeError("Gorsel islemleri icin Pillow paketi kurulu olmali.")
+            raise RuntimeError("Görsel işlemleri için Pillow paketi kurulu olmalı.")

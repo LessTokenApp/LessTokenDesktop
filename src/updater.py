@@ -1,4 +1,4 @@
-"""Auto-update system for Less Token desktop app."""
+"""Auto-update system for LessToken desktop app."""
 
 import os
 import json
@@ -14,7 +14,7 @@ GITHUB_REPO = "NuraydinArikan/LessTokenDesktop"
 GITHUB_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 # Must match the git tag being released. If this lags behind, every user on
 # the newest build is told to update to the version they are already running.
-CURRENT_VERSION = "1.0.3"
+CURRENT_VERSION = "1.0.4"
 
 
 class UpdateChecker:

@@ -30,12 +30,18 @@ jobs:
           choco install nsis -y
 
       - name: Build exe with PyInstaller
-        run: python -m PyInstaller --onefile --windowed --name "Less Token" main.py
+        run: python -m PyInstaller --onefile --windowed --name "LessToken" --icon assets\icon.ico --add-data "assets\icon.ico;assets" main.py
 
       - name: Build installer with NSIS
         run: |
           $env:Path += ";C:\Program Files (x86)\NSIS"
           makensis.exe installer.nsi
+
+      - name: Compute installer checksum
+        run: |
+          $hash = (Get-FileHash lesstoken-setup.exe -Algorithm SHA256).Hash
+          "$hash  lesstoken-setup.exe" | Out-File -Encoding ascii lesstoken-setup.exe.sha256
+          Write-Host "SHA-256: $hash"
 
       - name: Create Release
         env:
@@ -43,9 +49,10 @@ jobs:
         run: |
           $tag = "${{ github.ref }}".Replace("refs/tags/", "")
           gh release create $tag `
-            dist/"Less Token.exe" `
+            dist/"LessToken.exe" `
             lesstoken-setup.exe `
-            --title "Less Token $tag" `
+            lesstoken-setup.exe.sha256 `
+            --title "LessToken $tag" `
             --notes "Automated release build from GitHub Actions"
 
       - name: Upload artifacts to release
@@ -53,4 +60,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $tag = "${{ github.ref }}".Replace("refs/tags/", "")
-          gh release upload $tag dist/"Less Token.exe" lesstoken-setup.exe --clobber
+          gh release upload $tag dist/"LessToken.exe" lesstoken-setup.exe lesstoken-setup.exe.sha256 --clobber

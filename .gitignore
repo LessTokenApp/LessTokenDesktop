@@ -7,3 +7,7 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+
+# Local build artifacts (CI builds these fresh; not meant to be committed)
+*.spec
+/lesstoken-setup.exe
