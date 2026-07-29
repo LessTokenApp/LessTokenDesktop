@@ -353,11 +353,17 @@ class ClipboardOptimizerApp:
         kb = result.new_bytes / 1024
         w, h = result.new_size
         ow, oh = result.original_size
-        self._set_auto_status(f"{ow}x{oh} -> {w}x{h}, {kb:.0f} KB")
-        self.status.set(
-            f"Panodaki görsel küçültüldü: {ow}x{oh} -> {w}x{h} ({kb:.0f} KB). "
-            "Yapıştırmaya hazır."
-        )
+        if result.copied:
+            self._set_auto_status(f"{ow}x{oh} -> {w}x{h}, {kb:.0f} KB")
+            self.status.set(
+                f"Panodaki görsel küçültüldü: {ow}x{oh} -> {w}x{h} ({kb:.0f} KB). "
+                "Yapıştırmaya hazır."
+            )
+        else:
+            self._set_auto_status(f"{ow}x{oh} -> {w}x{h}, kopyalanamadı")
+            self.status.set(
+                f"Görsel küçültüldü ({ow}x{oh} -> {w}x{h}, {kb:.0f} KB) ama panoya kopyalanamadı."
+            )
 
     def _on_auto_shrink_error(self, exc: Exception) -> None:
         self._set_auto_status("hata")

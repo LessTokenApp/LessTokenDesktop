@@ -22,6 +22,7 @@ class AutoShrinkResult:
     original_size: tuple[int, int]
     new_size: tuple[int, int]
     new_bytes: int
+    copied: bool
 
 
 def fingerprint(image) -> str:
@@ -107,6 +108,7 @@ class ClipboardImageWatcher:
             original_size=result.original_size,
             new_size=result.new_size,
             new_bytes=result.new_bytes,
+            copied=copied,
         )
         if self.on_result:
             self.on_result(outcome)
