@@ -66,7 +66,6 @@ class ClipboardOptimizerApp:
             self.image_optimizer,
             on_result=self._on_auto_shrink,
             on_error=self._on_auto_shrink_error,
-            on_skip=self._on_auto_shrink_skip,
         )
         self._auto_poll_job = None
 
@@ -363,13 +362,6 @@ class ClipboardOptimizerApp:
     def _on_auto_shrink_error(self, exc: Exception) -> None:
         self._set_auto_status("hata")
         self.status.set(f"Otomatik küçültme başarısız: {exc}")
-
-    def _on_auto_shrink_skip(self, size: tuple[int, int]) -> None:
-        w, h = size
-        self._set_auto_status(f"zaten küçük ({w}x{h})")
-        self.status.set(
-            f"Panodaki görsel zaten {w}x{h} - {self.max_width_var.get()}px sınırının altında, değiştirilmedi."
-        )
 
     def _set_auto_status(self, text: str) -> None:
         if self.auto_status_label is not None:

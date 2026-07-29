@@ -5,7 +5,7 @@
 !include "x64.nsh"
 
 ; Basic Settings
-Name "LessToken v1.0.4"
+Name "LessToken v1.0.5"
 OutFile "lesstoken-setup.exe"
 InstallDir "$PROGRAMFILES\LessToken"
 
@@ -44,7 +44,7 @@ Section "Install"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\LessToken" \
              "DisplayIcon" "$INSTDIR\LessToken.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\LessToken" \
-             "DisplayVersion" "1.0.4"
+             "DisplayVersion" "1.0.5"
 SectionEnd
 
 ; Uninstaller Section

@@ -38,11 +38,10 @@ class ClipboardImageWatcher:
     with a Tk event loop rather than owning a blocking thread.
     """
 
-    def __init__(self, optimizer, on_result=None, on_error=None, on_skip=None) -> None:
+    def __init__(self, optimizer, on_result=None, on_error=None) -> None:
         self.optimizer = optimizer
         self.on_result = on_result
         self.on_error = on_error
-        self.on_skip = on_skip
         self.enabled = False
         self.max_width = 1024
         self.quality = 80
@@ -81,14 +80,6 @@ class ClipboardImageWatcher:
             return None
 
         self._seen = current
-
-        # Already small enough: leave it alone rather than re-encoding and
-        # quietly degrading quality.
-        if self.max_width > 0 and image.width <= self.max_width:
-            logger.info("Clipboard image already within %spx, skipping", self.max_width)
-            if self.on_skip:
-                self.on_skip(image.size)
-            return None
 
         try:
             result = self.optimizer.save_resized(
