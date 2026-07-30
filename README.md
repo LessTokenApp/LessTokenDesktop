@@ -4,7 +4,7 @@ Windows icin kullanimi kolay pano yardimcisi. Metin, gorsel ve dosya islemleri a
 
 ## En kolay kullanim
 
-1. `C:\Projects\AIClipboardOptimizer` klasorunu acin.
+1. `C:\Projects\LessToken` klasorunu acin.
 2. `Start AI Clipboard Optimizer.bat` dosyasina cift tiklayin.
 3. Pencerede su sekmeleri kullanin:
    - `Metin`: panodaki metni alir; duzeltme, kisaltma, resmi ton, ozet, maddeleme, ceviri ve e-posta taslagi islemleri sunar.
@@ -13,7 +13,7 @@ Windows icin kullanimi kolay pano yardimcisi. Metin, gorsel ve dosya islemleri a
 
 ## Gorsel kucultme
 
-`Gorsel` sekmesinde once `Panodaki gorseli al` veya `Gorsel dosyasi ac` secin. Sonra `Maks. genislik`, `Kalite` ve `Format` ayarlarini belirleyip `Gorseli kucult ve kaydet` dugmesine basin. Ciktilar `C:\Projects\AIClipboardOptimizer\outputs` klasorune kaydedilir.
+`Gorsel` sekmesinde once `Panodaki gorseli al` veya `Gorsel dosyasi ac` secin. Sonra `Maks. genislik`, `Kalite` ve `Format` ayarlarini belirleyip `Gorseli kucult ve kaydet` dugmesine basin. Ciktilar `C:\Projects\LessToken\outputs` klasorune kaydedilir.
 
 ## Istege bagli paketler
 

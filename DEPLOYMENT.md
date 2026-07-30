@@ -65,7 +65,7 @@ Prerequisites:
 Build installer:
 ```bash
 # Navigate to project root
-cd C:\Projects\AIClipboardOptimizer
+cd C:\Projects\LessToken
 
 # Run NSIS compiler
 makensis installer.nsi
