@@ -17,7 +17,9 @@ def main() -> int:
 
     # Check for updates on startup
     try:
-        from ..updater import check_and_update
+        # updater.py sits in src/ alongside this package, not inside it, so it
+        # is a top-level module - a relative import walks off the package root.
+        from updater import check_and_update
         update_info = check_and_update()
 
         if update_info.get("available"):
@@ -30,7 +32,7 @@ def main() -> int:
             )
 
             if response:
-                from ..updater import UpdateChecker
+                from updater import UpdateChecker
                 tag = f"v{update_info['version']}"
                 installer = UpdateChecker.download_installer(tag)
                 if installer:

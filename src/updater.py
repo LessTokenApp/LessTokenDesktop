@@ -10,11 +10,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-GITHUB_REPO = "NuraydinArikan/LessTokenDesktop"
+GITHUB_REPO = "LessTokenApp/LessTokenDesktop"
 GITHUB_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 # Must match the git tag being released. If this lags behind, every user on
 # the newest build is told to update to the version they are already running.
-CURRENT_VERSION = "1.0.6"
+CURRENT_VERSION = "1.0.7"
 
 
 class UpdateChecker:

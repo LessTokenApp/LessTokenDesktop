@@ -30,7 +30,7 @@ jobs:
           choco install nsis -y
 
       - name: Build exe with PyInstaller
-        run: python -m PyInstaller --onefile --windowed --name "LessToken" --icon assets\icon.ico --add-data "assets\icon.ico;assets" main.py
+        run: python -m PyInstaller --onefile --windowed --name "LessToken" --icon assets\icon.ico --add-data "assets\icon.ico;assets" --add-data "assets\help;assets\help" main.py
 
       - name: Build installer with NSIS
         run: |

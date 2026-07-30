@@ -6,6 +6,8 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from PIL import Image, ImageTk
+
 from .ai.processor import AIProcessor, get_operation_labels
 from .clipboard.monitor import ClipboardMonitor
 from .config import AppConfig
@@ -20,6 +22,65 @@ def _icon_path() -> Path:
     else:
         base = Path(__file__).resolve().parent.parent.parent
     return base / "assets" / "icon.ico"
+
+
+def _help_image_path(name: str) -> Path:
+    """Locate a bundled help-diagram PNG, whether running from source or frozen."""
+    if getattr(sys, "frozen", False):
+        base = Path(sys._MEIPASS)
+    else:
+        base = Path(__file__).resolve().parent.parent.parent
+    return base / "assets" / "help" / name
+
+
+HELP_CONTENT = {
+    "metin": {
+        "title": "Metin Sekmesi Yardımı",
+        "image": "metin.png",
+        "prep": (
+            "AI destekli işlemler için Ayarlar sekmesinden bir API anahtarı girin "
+            "(OpenAI, Claude veya Gemini). Anahtar girilmezse temel işlemler yine "
+            "çalışır, ama sonuçlar yerel (AI'siz) modda daha sınırlı olur."
+        ),
+        "steps": [
+            "Panodan al: Kopyaladığınız metni pencereye getirir.",
+            "Çalıştır: Açılır menüden seçtiğiniz işlemi (Düzelt/temizle, Özetle, vb.) çalıştırır.",
+            "Hızlı işlemler: Sık kullanılan işlemleri tek tıkla uygulayan kısayol butonları.",
+            "Sonuç: İşlemin çıktısının göründüğü alan.",
+            "Sonucu panoya kopyala: Sonucu tekrar panoya koyar, böylece başka bir uygulamaya yapıştırabilirsiniz.",
+        ],
+    },
+    "gorsel": {
+        "title": "Görsel Sekmesi Yardımı",
+        "image": "gorsel.png",
+        "prep": (
+            "Görselleri panoya kopyalayabilmek için pywin32 bileşeninin kurulu olması "
+            "gerekir (kurulum programıyla birlikte otomatik gelir). Görselden metin "
+            "okuma (OCR) için ek bir ayar gerekmez."
+        ),
+        "steps": [
+            "Panodaki görseli al / Görsel dosyası aç: İşlenecek görseli pencereye getirir.",
+            "Maks. genişlik, Kalite, Format: Görselin ne kadar küçültüleceğini ve hangi formatta kaydedileceğini belirler.",
+            "Görseli küçült ve kaydet: Görseli belirlediğiniz ayarlarla küçültüp bilgisayara kaydeder.",
+            "Son görseli panoya kopyala: Küçültülen görseli tekrar panoya koyar.",
+            "Otomatik küçült (panoyu izle): Açıkken, panoya her görsel kopyaladığınızda otomatik olarak küçültüp geri panoya koyar.",
+        ],
+    },
+    "dosya": {
+        "title": "Dosya Sekmesi Yardımı",
+        "image": "dosya.png",
+        "prep": (
+            "Dosyadan metin okuma; .txt, .md ve Word (.docx) gibi yaygın metin "
+            "dosyalarını destekler. Taranmış (görüntü) PDF'lerde metin çıkarma "
+            "sınırlı olabilir."
+        ),
+        "steps": [
+            "Dosyadan metin yükle: Seçtiğiniz dosyanın içeriğini bu alana getirir.",
+            "Metin sekmesine aktar: Yüklenen metni Metin sekmesine gönderir, böylece oradaki işlemleri uygulayabilirsiniz.",
+            "Sonucu dosyaya kaydet: Bu alandaki metni bir dosyaya kaydeder.",
+        ],
+    },
+}
 
 
 class ClipboardOptimizerApp:
@@ -119,6 +180,32 @@ class ClipboardOptimizerApp:
         status_frame.grid(row=2, column=0, sticky="ew")
         ttk.Label(status_frame, textvariable=self.status).pack(side=tk.LEFT, expand=True, fill=tk.X)
 
+    def _show_help(self, tab_key: str) -> None:
+        content = HELP_CONTENT[tab_key]
+        win = tk.Toplevel(self.root)
+        win.title(content["title"])
+        win.resizable(False, False)
+        try:
+            win.iconbitmap(default=str(_icon_path()))
+        except tk.TclError:
+            pass
+
+        outer = ttk.Frame(win, padding=12)
+        outer.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(outer, text="Ayarlar hazırlığı", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        ttk.Label(outer, text=content["prep"], wraplength=760, justify=tk.LEFT).pack(anchor="w", pady=(2, 12))
+
+        photo = ImageTk.PhotoImage(Image.open(_help_image_path(content["image"])))
+        win.image = photo  # keep a reference alive for the window's lifetime
+        tk.Label(outer, image=photo).pack(anchor="w")
+
+        ttk.Label(outer, text="Adımlar", font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(12, 2))
+        for i, step in enumerate(content["steps"], start=1):
+            ttk.Label(outer, text=f"{i}. {step}", wraplength=760, justify=tk.LEFT).pack(anchor="w", pady=1)
+
+        ttk.Button(outer, text="Kapat", command=win.destroy).pack(anchor="e", pady=(12, 0))
+
     def _build_text_tab(self, notebook: ttk.Notebook) -> None:
         tab = ttk.Frame(notebook, padding=10)
         notebook.add(tab, text="Metin")
@@ -136,6 +223,7 @@ class ClipboardOptimizerApp:
         ttk.Button(controls, text="Sonucu panoya kopyala", command=self.copy_text_result).pack(side=tk.LEFT, padx=6)
         ttk.Button(controls, text="Sonucu kaydet", command=self.save_text_result).pack(side=tk.LEFT)
         ttk.Button(controls, text="Temizle", command=self.clear_text).pack(side=tk.RIGHT)
+        ttk.Button(controls, text="? Yardım", command=lambda: self._show_help("metin")).pack(side=tk.RIGHT, padx=(0, 6))
         quick = ttk.Frame(tab)
         quick.grid(row=3, column=0, sticky="ew", pady=(0, 10))
         for key, label in self.operation_labels.items():
@@ -155,6 +243,7 @@ class ClipboardOptimizerApp:
         ttk.Button(top, text="Görsel dosyası aç", command=self.open_image_file).pack(side=tk.LEFT, padx=6)
         ttk.Button(top, text="Görseli küçült ve kaydet", command=self.resize_current_image).pack(side=tk.LEFT)
         ttk.Button(top, text="Son görseli panoya kopyala", command=self.copy_last_image).pack(side=tk.LEFT, padx=6)
+        ttk.Button(top, text="? Yardım", command=lambda: self._show_help("gorsel")).pack(side=tk.RIGHT)
         auto = ttk.Frame(tab)
         auto.grid(row=4, column=0, sticky="ew", pady=(8, 0))
         ttk.Checkbutton(
@@ -195,6 +284,7 @@ class ClipboardOptimizerApp:
         ttk.Button(controls, text="Metin sekmesine aktar", command=self.move_file_text_to_text_tab).pack(side=tk.LEFT, padx=6)
         ttk.Button(controls, text="Sonucu dosyaya kaydet", command=self.save_file_text).pack(side=tk.LEFT)
         ttk.Button(controls, text="Temizle", command=self.clear_file_text).pack(side=tk.RIGHT)
+        ttk.Button(controls, text="? Yardım", command=lambda: self._show_help("dosya")).pack(side=tk.RIGHT, padx=(0, 6))
         self.file_text = tk.Text(tab, height=20, wrap="word", undo=True)
         self.file_text.grid(row=1, column=0, sticky="nsew")
 
