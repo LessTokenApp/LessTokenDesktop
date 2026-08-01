@@ -119,3 +119,31 @@ def write_ico(path: Path, sizes: tuple[int, ...] = ICO_SIZES) -> None:
         sizes=[(size, size) for size in ordered],
         append_images=frames[:-1],
     )
+
+
+def _hex(colour: Colour) -> str:
+    return "#%02X%02X%02X" % colour[:3]
+
+
+def svg(cut: Cut = SM) -> str:
+    """Emit the mark as a standalone SVG document.
+
+    Defaults to the small cut: the only SVG we ship is the web favicon, which
+    browsers render in a tab strip at well under 48px.
+    """
+    rx, ry, rw, rh, radius, stroke = cut.ring
+    lines = [
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">',
+        f'  <rect x="0" y="0" width="100" height="100" '
+        f'rx="{GROUND_RADIUS:g}" fill="{_hex(NAVY)}"/>',
+        f'  <rect x="{rx:g}" y="{ry:g}" width="{rw:g}" height="{rh:g}" '
+        f'rx="{radius:g}" fill="none" stroke="{_hex(CYAN)}" '
+        f'stroke-width="{stroke:g}"/>',
+    ]
+    for x, y, w, h, colour in cut.strokes:
+        lines.append(
+            f'  <rect x="{x:g}" y="{y:g}" width="{w:g}" height="{h:g}" '
+            f'fill="{_hex(colour)}"/>'
+        )
+    lines.append("</svg>")
+    return "\n".join(lines) + "\n"

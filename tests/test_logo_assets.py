@@ -123,3 +123,31 @@ def test_ico_accepts_a_reduced_size_set(tmp_path):
     write_ico(path, sizes=(16, 32))
     with Image.open(path) as ico:
         assert sorted(ico.ico.sizes()) == [(16, 16), (32, 32)]
+
+
+import xml.etree.ElementTree as ET
+
+from tools.render_logo import svg
+
+
+def test_svg_is_well_formed_and_uses_the_unit_grid():
+    root = ET.fromstring(svg())
+    assert root.tag == "{http://www.w3.org/2000/svg}svg"
+    assert root.get("viewBox") == "0 0 100 100"
+
+
+def test_svg_has_ground_ring_and_four_letter_strokes():
+    root = ET.fromstring(svg())
+    rects = root.findall("{http://www.w3.org/2000/svg}rect")
+    assert len(rects) == 6
+
+
+def test_svg_uses_only_brand_colours():
+    root = ET.fromstring(svg())
+    used = set()
+    for rect in root.findall("{http://www.w3.org/2000/svg}rect"):
+        for attr in ("fill", "stroke"):
+            value = rect.get(attr)
+            if value and value != "none":
+                used.add(value.upper())
+    assert used == {"#0B2B45", "#06B6D4", "#FFFFFF"}
