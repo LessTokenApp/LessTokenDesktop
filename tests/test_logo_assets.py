@@ -151,3 +151,36 @@ def test_svg_uses_only_brand_colours():
             if value and value != "none":
                 used.add(value.upper())
     assert used == {"#0B2B45", "#06B6D4", "#FFFFFF"}
+
+
+def test_svg_geometry_matches_the_cut():
+    """Regression guard: the emitted numeric geometry must match `cut`.
+
+    The existing SVG tests only check well-formedness, rect count, and
+    colour set -- a version of svg() that emitted the ring as x1/y1/x2/y2
+    instead of x/y/width/height would still pass all of them. This asserts
+    the actual x/y/width/height values against the source Cut.
+    """
+    ns = "{http://www.w3.org/2000/svg}rect"
+    for cut in (LG, SM):
+        root = ET.fromstring(svg(cut))
+        rects = root.findall(ns)
+
+        ground = rects[0]
+        assert float(ground.get("x")) == 0
+        assert float(ground.get("y")) == 0
+        assert float(ground.get("width")) == 100
+        assert float(ground.get("height")) == 100
+
+        ring = rects[1]
+        rx, ry, rw, rh, _radius, _stroke = cut.ring
+        assert float(ring.get("x")) == rx
+        assert float(ring.get("y")) == ry
+        assert float(ring.get("width")) == rw
+        assert float(ring.get("height")) == rh
+
+        for rect, (x, y, w, h, _colour) in zip(rects[2:], cut.strokes):
+            assert float(rect.get("x")) == x
+            assert float(rect.get("y")) == y
+            assert float(rect.get("width")) == w
+            assert float(rect.get("height")) == h
