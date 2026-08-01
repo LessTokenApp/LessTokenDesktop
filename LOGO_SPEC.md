@@ -1,6 +1,8 @@
 # LessToken Logo Mark — Design Spec
 
-Status: **draft, awaiting approval**. No implementation until this is signed off.
+Status: **approved and implemented**. `tools/render_logo.py` is the generator — it
+renders every asset in §6 from the geometry in §3. This document is the source of truth
+for that geometry: change the spec first, then regenerate with `python tools/render_logo.py`.
 
 ## 1. Concept
 
@@ -160,11 +162,15 @@ Mapped to the files that actually consume an icon in this repo today.
 | Asset | Cut | Consumer |
 | --- | --- | --- |
 | `assets/icon.ico` (16, 32, 48, 256) | `lt-sm` for 16/32, `lt-lg` for 48/256 | `src/aiclipboardoptimizer/gui.py:24` `_icon_path()` → `iconbitmap` at lines 141, 189; and `.github/workflows/build-release.yml:33` (`--icon`, `--add-data`) |
-| `web/public/favicon.svg` | `lt-sm` | `web/index.html:5` — currently still points at the Vite placeholder `/vite.svg` |
-| `web/public/favicon.ico` (16, 32) | `lt-sm` | Fallback for browsers without SVG favicon support |
-| `web/public/apple-touch-icon.png` (180) | `lt-lg` | iOS home screen; needs adding to `web/index.html` |
+| `web/public/favicon.svg` | `lt-sm` | `web/index.html:5` `<link rel="icon" type="image/svg+xml">` |
+| `web/public/favicon.ico` (16, 32) | `lt-sm` | `web/index.html:6` `<link rel="alternate icon">` — fallback for browsers without SVG favicon support |
+| `web/public/apple-touch-icon.png` (180) | `lt-lg` | `web/index.html:7` `<link rel="apple-touch-icon">` — iOS home screen |
 
-`web/public/` is currently empty, so all three web assets are new files.
+All three web assets exist under `web/public/` and `web/index.html` points at them; the
+Vite placeholder `/vite.svg` is no longer referenced. Because the SVG and the ICO are the
+same asset served to the same tab, one declared as the other's fallback, the rasteriser
+matches SVG stroke semantics: SVG centres a stroke on the path, so `render()` expands the
+ring's bounding box by half a stroke to compensate for Pillow stroking inward.
 
 `installer.nsi` needs no change — it sets `DisplayIcon` to `$INSTDIR\LessToken.exe`
 (line 45) and has no `MUI_ICON`, so it inherits whatever PyInstaller embeds.

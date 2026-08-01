@@ -87,10 +87,19 @@ def render(
 
     draw.rounded_rectangle([0, 0, n - 1, n - 1], radius=ground_radius * k, fill=NAVY)
 
+    # SVG centres a stroke on the path; Pillow strokes inward from the bounding
+    # box. Expand the box by half a stroke on every side (and grow the corner
+    # radius to match) so the raster ring lands where the SVG ring does.
     rx, ry, rw, rh, radius, stroke = cut.ring
+    half = stroke / 2.0
     draw.rounded_rectangle(
-        [rx * k, ry * k, (rx + rw) * k - 1, (ry + rh) * k - 1],
-        radius=radius * k,
+        [
+            (rx - half) * k,
+            (ry - half) * k,
+            (rx + rw + half) * k - 1,
+            (ry + rh + half) * k - 1,
+        ],
+        radius=(radius + half) * k,
         outline=CYAN,
         width=max(1, round(stroke * k)),
     )
@@ -103,6 +112,10 @@ def render(
 
 ICO_SIZES: tuple[int, ...] = (16, 32, 48, 256)
 
+# The ICO container stores each frame's dimension in a single byte, so 256 is
+# the hard ceiling. Pillow drops oversized frames without complaint.
+ICO_MAX_SIZE = 256
+
 
 def write_ico(path: Path, sizes: tuple[int, ...] = ICO_SIZES) -> None:
     """Write a multi-resolution .ico, each frame using its own optical cut.
@@ -110,7 +123,20 @@ def write_ico(path: Path, sizes: tuple[int, ...] = ICO_SIZES) -> None:
     Pillow's `sizes=` argument alone would downsample a single base image and
     lose the small cut. `append_images` embeds distinct frames, so the 16 and 32
     keep SM while 48 and 256 keep LG.
+
+    Sizes are validated up front: an empty set would fail obscurely on
+    `frames[-1]`, and Pillow's ICO writer silently drops any frame above 256
+    rather than raising, so a typo would ship a quietly incomplete icon.
     """
+    if not sizes:
+        raise ValueError("write_ico needs at least one size, got an empty set")
+    bad = [size for size in sizes if not 1 <= size <= ICO_MAX_SIZE]
+    if bad:
+        raise ValueError(
+            f"ICO frame sizes must be between 1 and {ICO_MAX_SIZE} inclusive; "
+            f"got {bad}"
+        )
+
     ordered = sorted(sizes)
     frames = [render(size) for size in ordered]
     frames[-1].save(

@@ -9,6 +9,55 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from tools.render_logo import CUT_THRESHOLD, LG, SM, cut_for
 
 
+def _stroke_bounds(cut):
+    """(min_x, max_x, min_y, max_y) of the letterform rects, in grid units."""
+    xs = [x for x, _y, _w, _h, _c in cut.strokes]
+    ys = [y for _x, y, _w, _h, _c in cut.strokes]
+    rights = [x + w for x, _y, w, _h, _c in cut.strokes]
+    bottoms = [y + h for _x, y, _w, h, _c in cut.strokes]
+    return min(xs), max(rights), min(ys), max(bottoms)
+
+
+def _stem_to_bar_gap(cut):
+    """LOGO_SPEC.md 3.1: distance from the L stem's right edge to the T bar."""
+    stem, _foot, bar, _tstem = cut.strokes
+    return bar[0] - (stem[0] + stem[2])
+
+
+def test_ring_stroke_width_per_cut():
+    """LOGO_SPEC.md 3.1: the ring is 2 at large, 4.5 at small."""
+    assert LG.ring[5] == 2.0
+    assert SM.ring[5] == 4.5
+    assert LG.ring[5] != SM.ring[5]
+
+
+def test_letter_stroke_width_per_cut():
+    """LOGO_SPEC.md 3.1: letter strokes are 12 at large, 15 at small."""
+    assert LG.strokes[0][2] == 12.0
+    assert SM.strokes[0][2] == 15.0
+    assert LG.strokes[0][2] != SM.strokes[0][2]
+
+
+def test_stem_to_bar_gap_per_cut():
+    """LOGO_SPEC.md 3.1: the small cut tightens the gap from 6 to 4."""
+    assert _stem_to_bar_gap(LG) == 6.0
+    assert _stem_to_bar_gap(SM) == 4.0
+    assert _stem_to_bar_gap(LG) != _stem_to_bar_gap(SM)
+
+
+def test_content_bounds_per_cut():
+    """LOGO_SPEC.md 3.1: the small cut is set wider on the grid."""
+    assert _stroke_bounds(LG) == (24.0, 76.0, 25.0, 75.0)
+    assert _stroke_bounds(SM) == (22.0, 78.0, 23.0, 77.0)
+    assert _stroke_bounds(LG) != _stroke_bounds(SM)
+
+
+def test_the_two_cuts_are_not_the_same_geometry():
+    """The whole point of two cuts: they must actually differ."""
+    assert LG.ring != SM.ring
+    assert LG.strokes != SM.strokes
+
+
 def test_cut_for_selects_small_below_threshold():
     assert cut_for(16) is SM
     assert cut_for(32) is SM
@@ -125,9 +174,22 @@ def test_ico_accepts_a_reduced_size_set(tmp_path):
         assert sorted(ico.ico.sizes()) == [(16, 16), (32, 32)]
 
 
+def test_ico_rejects_an_empty_size_set(tmp_path):
+    """An empty set used to die on frames[-1] with a bare IndexError."""
+    with pytest.raises(ValueError, match="at least one size"):
+        write_ico(tmp_path / "icon.ico", sizes=())
+
+
+def test_ico_rejects_sizes_outside_the_container_limit(tmp_path):
+    """Pillow silently drops frames above 256 -- refuse them instead."""
+    for bad in ((16, 512), (0,), (-8, 32), (257,)):
+        with pytest.raises(ValueError, match="between 1 and 256"):
+            write_ico(tmp_path / "icon.ico", sizes=bad)
+
+
 import xml.etree.ElementTree as ET
 
-from tools.render_logo import svg
+from tools.render_logo import GROUND_RADIUS, svg
 
 
 def test_svg_is_well_formed_and_uses_the_unit_grid():
@@ -171,13 +233,16 @@ def test_svg_geometry_matches_the_cut():
         assert float(ground.get("y")) == 0
         assert float(ground.get("width")) == 100
         assert float(ground.get("height")) == 100
+        assert float(ground.get("rx")) == GROUND_RADIUS
 
         ring = rects[1]
-        rx, ry, rw, rh, _radius, _stroke = cut.ring
+        rx, ry, rw, rh, radius, stroke = cut.ring
         assert float(ring.get("x")) == rx
         assert float(ring.get("y")) == ry
         assert float(ring.get("width")) == rw
         assert float(ring.get("height")) == rh
+        assert float(ring.get("rx")) == radius
+        assert float(ring.get("stroke-width")) == stroke
 
         for rect, (x, y, w, h, _colour) in zip(rects[2:], cut.strokes):
             assert float(rect.get("x")) == x
@@ -215,3 +280,10 @@ def test_desktop_icon_keeps_all_four_sizes(tmp_path):
     build(tmp_path)
     with Image.open(tmp_path / "assets" / "icon.ico") as ico:
         assert sorted(ico.ico.sizes()) == [(16, 16), (32, 32), (48, 48), (256, 256)]
+
+
+def test_web_favicon_keeps_only_the_two_tab_sizes(tmp_path):
+    """build() must pass the reduced set: a browser tab never needs 48 or 256."""
+    build(tmp_path)
+    with Image.open(tmp_path / "web" / "public" / "favicon.ico") as ico:
+        assert sorted(ico.ico.sizes()) == [(16, 16), (32, 32)]
