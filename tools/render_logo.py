@@ -9,6 +9,7 @@ Run:  python tools/render_logo.py
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from PIL import Image, ImageDraw
 
@@ -98,3 +99,23 @@ def render(
         draw.rectangle([x * k, y * k, (x + w) * k - 1, (y + h) * k - 1], fill=colour)
 
     return img.resize((size, size), Image.LANCZOS)
+
+
+ICO_SIZES: tuple[int, ...] = (16, 32, 48, 256)
+
+
+def write_ico(path: Path, sizes: tuple[int, ...] = ICO_SIZES) -> None:
+    """Write a multi-resolution .ico, each frame using its own optical cut.
+
+    Pillow's `sizes=` argument alone would downsample a single base image and
+    lose the small cut. `append_images` embeds distinct frames, so the 16 and 32
+    keep SM while 48 and 256 keep LG.
+    """
+    ordered = sorted(sizes)
+    frames = [render(size) for size in ordered]
+    frames[-1].save(
+        path,
+        format="ICO",
+        sizes=[(size, size) for size in ordered],
+        append_images=frames[:-1],
+    )

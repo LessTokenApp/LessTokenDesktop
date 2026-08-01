@@ -90,3 +90,36 @@ def test_render_centre_uses_only_brand_colours():
         actual = img.getpixel((int(x), int(y)))
         drift = max(abs(a - e) for a, e in zip(actual, expected))
         assert drift <= 2, f"{name} was {actual}, expected ~{expected}"
+
+
+from PIL import Image, ImageChops
+
+from tools.render_logo import ICO_SIZES, write_ico
+
+
+def test_ico_contains_every_requested_size(tmp_path):
+    path = tmp_path / "icon.ico"
+    write_ico(path)
+    with Image.open(path) as ico:
+        assert sorted(ico.ico.sizes()) == sorted((s, s) for s in ICO_SIZES)
+
+
+def test_ico_frames_keep_their_own_optical_cut(tmp_path):
+    """Each frame must be the cut for its size, not a downsample of the 256."""
+    path = tmp_path / "icon.ico"
+    write_ico(path)
+    with Image.open(path) as ico:
+        for size in ICO_SIZES:
+            ico.size = (size, size)
+            embedded = ico.convert("RGBA")
+            expected = render(size, cut_for(size))
+            assert ImageChops.difference(embedded, expected).getbbox() is None, (
+                f"{size}px frame does not match a direct render of its cut"
+            )
+
+
+def test_ico_accepts_a_reduced_size_set(tmp_path):
+    path = tmp_path / "favicon.ico"
+    write_ico(path, sizes=(16, 32))
+    with Image.open(path) as ico:
+        assert sorted(ico.ico.sizes()) == [(16, 16), (32, 32)]
