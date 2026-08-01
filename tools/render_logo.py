@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from PIL import Image, ImageDraw
+
 Colour = tuple[int, int, int, int]
 
 NAVY: Colour = (0x0B, 0x2B, 0x45, 255)
@@ -57,3 +59,42 @@ SM = Cut(
 def cut_for(size: int) -> Cut:
     """Pick the optical cut appropriate to a pixel size."""
     return SM if size < CUT_THRESHOLD else LG
+
+
+def render(
+    size: int,
+    cut: Cut | None = None,
+    ground_radius: float | None = None,
+) -> Image.Image:
+    """Draw the mark at `size` pixels square.
+
+    Drawn at SUPERSAMPLE x and downsampled with LANCZOS -- Pillow's own
+    rounded_rectangle antialiasing is too coarse at favicon sizes.
+
+    Pass ground_radius=0.0 for a full-bleed square (iOS applies its own mask,
+    so a pre-rounded apple-touch-icon would be rounded twice).
+    """
+    if cut is None:
+        cut = cut_for(size)
+    if ground_radius is None:
+        ground_radius = GROUND_RADIUS
+
+    n = size * SUPERSAMPLE
+    k = n / 100.0
+    img = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    draw.rounded_rectangle([0, 0, n - 1, n - 1], radius=ground_radius * k, fill=NAVY)
+
+    rx, ry, rw, rh, radius, stroke = cut.ring
+    draw.rounded_rectangle(
+        [rx * k, ry * k, (rx + rw) * k - 1, (ry + rh) * k - 1],
+        radius=radius * k,
+        outline=CYAN,
+        width=max(1, round(stroke * k)),
+    )
+
+    for x, y, w, h, colour in cut.strokes:
+        draw.rectangle([x * k, y * k, (x + w) * k - 1, (y + h) * k - 1], fill=colour)
+
+    return img.resize((size, size), Image.LANCZOS)

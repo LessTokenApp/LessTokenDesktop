@@ -48,3 +48,45 @@ def test_t_stem_stays_within_the_foot():
         _stem, foot, _bar, tstem = cut.strokes
         assert foot[0] < tstem[0]
         assert _right_edge(tstem) < _right_edge(foot)
+
+
+from tools.render_logo import CYAN, NAVY, WHITE, render
+
+
+def test_render_returns_requested_size():
+    for size in (16, 32, 48, 180, 256):
+        img = render(size)
+        assert img.size == (size, size)
+        assert img.mode == "RGBA"
+
+
+def test_render_corner_is_transparent_when_rounded():
+    """The rounded ground must leave the canvas corner empty."""
+    img = render(256)
+    assert img.getpixel((0, 0))[3] == 0
+
+
+def test_render_corner_is_opaque_when_square():
+    """ground_radius=0 gives a full-bleed square for apple-touch-icon."""
+    img = render(180, ground_radius=0.0)
+    assert img.getpixel((0, 0))[3] == 255
+
+
+def test_render_centre_uses_only_brand_colours():
+    """Sample the L stem, the T bar and the ground; no stray colours.
+
+    Sample points sit well inside their shapes, but LANCZOS can overshoot
+    slightly near edges, so allow a small per-channel tolerance rather than
+    asserting exact equality.
+    """
+    img = render(256).convert("RGBA")
+    scale = 256 / 100.0
+    samples = {
+        "l_stem": ((30 * scale, 40 * scale), WHITE),
+        "t_bar": ((60 * scale, 30 * scale), CYAN),
+        "ground": ((50 * scale, 85 * scale), NAVY),
+    }
+    for name, ((x, y), expected) in samples.items():
+        actual = img.getpixel((int(x), int(y)))
+        drift = max(abs(a - e) for a, e in zip(actual, expected))
+        assert drift <= 2, f"{name} was {actual}, expected ~{expected}"
