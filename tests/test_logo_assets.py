@@ -184,3 +184,34 @@ def test_svg_geometry_matches_the_cut():
             assert float(rect.get("y")) == y
             assert float(rect.get("width")) == w
             assert float(rect.get("height")) == h
+
+
+from tools.render_logo import build
+
+
+def test_build_writes_every_expected_asset(tmp_path):
+    written = build(tmp_path)
+    names = {path.relative_to(tmp_path).as_posix() for path in written}
+    assert names == {
+        "assets/icon.ico",
+        "web/public/favicon.ico",
+        "web/public/favicon.svg",
+        "web/public/apple-touch-icon.png",
+    }
+    for path in written:
+        assert path.exists()
+        assert path.stat().st_size > 0
+
+
+def test_apple_touch_icon_is_full_bleed(tmp_path):
+    """iOS masks the icon itself -- a pre-rounded one would round twice."""
+    build(tmp_path)
+    with Image.open(tmp_path / "web" / "public" / "apple-touch-icon.png") as img:
+        assert img.size == (180, 180)
+        assert img.convert("RGBA").getpixel((0, 0))[3] == 255
+
+
+def test_desktop_icon_keeps_all_four_sizes(tmp_path):
+    build(tmp_path)
+    with Image.open(tmp_path / "assets" / "icon.ico") as ico:
+        assert sorted(ico.ico.sizes()) == [(16, 16), (32, 32), (48, 48), (256, 256)]

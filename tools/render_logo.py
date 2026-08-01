@@ -147,3 +147,37 @@ def svg(cut: Cut = SM) -> str:
         )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
+
+
+ROOT = Path(__file__).resolve().parent.parent
+
+APPLE_TOUCH_SIZE = 180
+
+
+def build(root: Path) -> list[Path]:
+    """Write every shipped asset under `root`. Returns the paths written."""
+    assets = root / "assets"
+    public = root / "web" / "public"
+    assets.mkdir(parents=True, exist_ok=True)
+    public.mkdir(parents=True, exist_ok=True)
+
+    desktop_icon = assets / "icon.ico"
+    web_icon = public / "favicon.ico"
+    web_svg = public / "favicon.svg"
+    apple_icon = public / "apple-touch-icon.png"
+
+    write_ico(desktop_icon)
+    write_ico(web_icon, sizes=(16, 32))
+    web_svg.write_text(svg(), encoding="utf-8")
+    render(APPLE_TOUCH_SIZE, ground_radius=0.0).save(apple_icon)
+
+    return [desktop_icon, web_icon, web_svg, apple_icon]
+
+
+def main() -> None:
+    for path in build(ROOT):
+        print(f"wrote {path.relative_to(ROOT).as_posix()}")
+
+
+if __name__ == "__main__":
+    main()
